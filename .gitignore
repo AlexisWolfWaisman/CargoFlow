@@ -1,3 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+
+# SQLite DB and instance data
+instance/
+*.db
+
+# Logs and pid files
+server.log
+server.pid
+
+# VSCode
+.vscode/
+
+# Node
+node_modules/
+dist/
+
+# Environment files
+.env
+
+# Build / misc
+*.egg-info/
+pip-wheel-metadata/
 # Logs
 logs
 *.log
