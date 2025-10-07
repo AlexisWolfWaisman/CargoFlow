@@ -277,9 +277,9 @@ const Dashboard = ({ viajes, choferes, camiones, polizas }) => {
     ];
     
     const alertConfig = {
-        error: { icon: '🚨', color: 'red' },
-        warning: { icon: '⚠️', color: 'yellow' },
-        info: { icon: 'ℹ️', color: 'blue' },
+        error:   { icon: '🚨', styles: { container: 'border-red-500 bg-red-50', text: 'text-red-800' } },
+        warning: { icon: '⚠️', styles: { container: 'border-yellow-500 bg-yellow-50', text: 'text-yellow-800' } },
+        info:    { icon: 'ℹ️', styles: { container: 'border-blue-500 bg-blue-50', text: 'text-blue-800' } },
     };
 
     return (
@@ -305,11 +305,11 @@ const Dashboard = ({ viajes, choferes, camiones, polizas }) => {
                  {alertas.length > 0 ? (
                     <ul className="space-y-3">
                         {alertas.map((alerta, index) => {
-                            const { icon, color } = alertConfig[alerta.type];
+                            const { icon, styles } = alertConfig[alerta.type];
                             return (
-                                <li key={index} className={`flex items-start p-4 rounded-lg border-l-4 border-${color}-500 bg-${color}-50`}>
+                                <li key={index} className={`flex items-start p-4 rounded-lg border-l-4 ${styles.container}`}>
                                     <span className="text-2xl mr-4">{icon}</span>
-                                    <p className={`text-md text-${color}-800`}>{alerta.message}</p>
+                                    <p className={`text-md ${styles.text}`}>{alerta.message}</p>
                                 </li>
                             );
                         })}
@@ -1189,7 +1189,8 @@ const EditGastoModal = ({ gasto, onClose, onSave, tiposDeGasto, viajes, currenci
     }); }, [gasto]);
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const getViajeDesc = (viajeId) => {
-        const viaje = viajes.find(v => v.id === viajeId);
+        // FIX: Ensure viajeId is compared as a number to avoid type mismatches.
+        const viaje = viajes.find(v => v.id === Number(viajeId));
         return viaje ? `${viaje.origen} → ${viaje.destino}` : 'N/A';
     };
     const handleSubmit = (e) => {
