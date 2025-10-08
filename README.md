@@ -24,7 +24,8 @@ Basic usage:
 - Make the script executable and show status:
 
 ```bash
-cd /home/alexis/Escritorio/CargoFlow
+# From your project root
+cd <project-root>
 chmod +x scripts/run_local.sh
 ./scripts/run_local.sh status
 ```
@@ -32,24 +33,28 @@ chmod +x scripts/run_local.sh
 - Start both services:
 
 ```bash
+# From your project root
 ./scripts/run_local.sh start
 ```
 
 - Force start if ports are in use (the script will attempt to kill processes occupying the ports):
 
 ```bash
+# From your project root
 ./scripts/run_local.sh start --force
 ```
 
 - Stop both services:
 
 ```bash
+# From your project root
 ./scripts/run_local.sh stop
 ```
 
 - Restart:
 
 ```bash
+# From your project root
 ./scripts/run_local.sh restart
 ```
 
