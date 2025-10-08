@@ -167,6 +167,35 @@ function show_status() {
   fi
 }
 
+# Attempt to detect the frontend URL that Vite printed to the log.
+# Falls back to http://localhost:$FRONTEND_PORT/ if nothing is found.
+function detect_frontend_url() {
+  # Try to parse vite.log for a Local URL (Vite prints something like: "Local: http://localhost:3002/")
+  if [ -f "$FRONTEND_LOG" ]; then
+    for i in $(seq 1 8); do
+      url=$(grep -m1 -Eo 'http://[^[:space:]]+' "$FRONTEND_LOG" | head -n1 || true)
+      if [ -n "$url" ]; then
+        echo "$url"
+        return 0
+      fi
+      sleep 1
+    done
+  fi
+  # fallback
+  echo "http://localhost:$FRONTEND_PORT/"
+}
+
+# Show friendly access URLs for frontend and backend
+function show_access_urls() {
+  local fe_url
+  fe_url=$(detect_frontend_url)
+  echo "----------------------------------------------------------------"
+  echo "Frontend (open in a browser): ${fe_url}"
+  echo "Backend API endpoint: http://127.0.0.1:$BACKEND_PORT/api"
+  echo "Logs: frontend -> $FRONTEND_LOG   backend -> $BACKEND_LOG"
+  echo "----------------------------------------------------------------"
+}
+
 function stop_all() {
   echo "Stopping frontend..."
   if [ -f "$FRONTEND_PID_FILE" ]; then
@@ -193,6 +222,9 @@ case "${COMMAND}" in
     echo "Starting services..."
     start_backend || true
     start_frontend || true
+    # Give frontend a moment to emit its startup lines, then show access URLs
+    sleep 1
+    show_access_urls
     ;;
   stop)
     stop_all
@@ -203,6 +235,8 @@ case "${COMMAND}" in
     FORCE=1 # allow port reuse after stop
     start_backend || true
     start_frontend || true
+    sleep 1
+    show_access_urls
     ;;
   status|*)
     show_status
