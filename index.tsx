@@ -19,6 +19,7 @@ const ChoferesIcon = () => <Icon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7
 const CamionesIcon = () => <Icon path="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />;
 const AcopladosIcon = () => <Icon path="M20 12H4m16 0a4 4 0 10-8 0 4 4 0 008 0zm-8 0a4 4 0 11-8 0 4 4 0 018 0z" />;
 const PolizasIcon = () => <Icon path="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />;
+const InformesIcon = () => <Icon path="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />;
 const SettingsIcon = () => <Icon path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />;
 const EditIcon = () => <Icon path="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536l12.232-12.232z" className="h-5 w-5" />;
 const DeleteIcon = () => <Icon path="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" className="h-5 w-5" />;
@@ -181,6 +182,7 @@ const App = () => {
             case 'viajes': return <ViajesManager viajes={viajes} choferes={choferes} camiones={camiones} acoplados={acoplados} estados={viajeEstados} onAdd={handleAdd('viajes', 'viajes')} onUpdate={handleUpdate('viajes')} onDelete={handleDelete('viajes', 'viajes')} />;
             case 'polizas': return <PolizasManager polizas={polizas} camiones={camiones} acoplados={acoplados} onAdd={handleAdd('polizas', 'polizas')} onUpdate={handleUpdate('polizas')} onDelete={handleDelete('polizas', 'polizas')} />;
             case 'gastos': return <GastosManager gastos={gastos} tiposDeGasto={tiposDeGasto} currencies={currencies} viajes={viajes} onAddGasto={handleAdd('gastos', 'gastos')} onUpdateGasto={handleUpdate('gastos')} onDeleteGasto={handleDelete('gastos', 'gastos')} />;
+            case 'informes': return <InformesManager viajes={viajes} />;
             case 'configuracion': return <ConfiguracionManager tiposDeGasto={tiposDeGasto} currencies={currencies} onAddTipo={handleAddTipoGasto} onDeleteTipo={handleDeleteTipoGasto} />;
             default: return <Dashboard viajes={viajes} choferes={choferes} camiones={camiones} polizas={polizas} />;
         }
@@ -204,6 +206,7 @@ const Sidebar = ({ setActiveView, activeView }) => {
         { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
         { id: 'viajes', label: 'Viajes', icon: <ViajesIcon /> },
         { id: 'gastos', label: 'Gastos', icon: <GastosIcon /> },
+        { id: 'informes', label: 'Informes', icon: <InformesIcon /> },
         { id: 'choferes', label: 'Choferes', icon: <ChoferesIcon /> },
         { id: 'camiones', label: 'Camiones', icon: <CamionesIcon /> },
         { id: 'acoplados', label: 'Acoplados', icon: <AcopladosIcon /> },
@@ -1225,6 +1228,188 @@ const EditGastoModal = ({ gasto, onClose, onSave, tiposDeGasto, viajes, currenci
                         <button type="submit" className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700">Guardar Cambios</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+};
+
+const InformesManager = ({ viajes }) => {
+    const [loading, setLoading] = useState(false);
+    const [selectedViaje, setSelectedViaje] = useState('');
+    const [fechaInicio, setFechaInicio] = useState('');
+    const [fechaFin, setFechaFin] = useState('');
+    const [message, setMessage] = useState('');
+
+    const downloadDatosPermanentes = async () => {
+        setLoading(true);
+        setMessage('');
+        try {
+            const response = await fetch('http://127.0.0.1:5001/api/informes/datos-permanentes-excel');
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `datos_permanentes_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setMessage('Archivo descargado exitosamente');
+        } catch (error) {
+            console.error('Error descargando informe:', error);
+            setMessage('Error al descargar el informe');
+        }
+        setLoading(false);
+    };
+
+    const downloadGastosViaje = async () => {
+        if (!selectedViaje) {
+            setMessage('Seleccioná un viaje');
+            return;
+        }
+        
+        setLoading(true);
+        setMessage('');
+        try {
+            const response = await fetch(`http://127.0.0.1:5001/api/informes/gastos-viaje-excel/${selectedViaje}`);
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gastos_viaje_${selectedViaje}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setMessage('Archivo descargado exitosamente');
+        } catch (error) {
+            console.error('Error descargando informe:', error);
+            setMessage('Error al descargar el informe');
+        }
+        setLoading(false);
+    };
+
+    const downloadGastosPeriodo = async () => {
+        if (!fechaInicio || !fechaFin) {
+            setMessage('Seleccioná fecha de inicio y fin');
+            return;
+        }
+        
+        setLoading(true);
+        setMessage('');
+        try {
+            const response = await fetch(`http://127.0.0.1:5001/api/informes/gastos-periodo-excel?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gastos_periodo_${fechaInicio}_${fechaFin}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setMessage('Archivo descargado exitosamente');
+        } catch (error) {
+            console.error('Error descargando informe:', error);
+            setMessage('Error al descargar el informe');
+        }
+        setLoading(false);
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="bg-white rounded-xl shadow-lg p-8">
+                <h2 className="text-3xl font-bold text-slate-800 mb-6 flex items-center">
+                    <InformesIcon />
+                    <span className="ml-3">Informes</span>
+                </h2>
+                
+                {message && (
+                    <div className={`mb-6 p-4 rounded-lg ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {message}
+                    </div>
+                )}
+
+                <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Datos Permanentes */}
+                    <div className="bg-slate-50 rounded-lg p-6">
+                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Viajes Completos</h3>
+                        <p className="text-slate-600 mb-4">Exportar todos los viajes con información completa de chofer, camión y acoplado</p>
+                        <button
+                            onClick={downloadDatosPermanentes}
+                            disabled={loading}
+                            className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 disabled:bg-slate-400"
+                        >
+                            {loading ? 'Generando...' : 'Descargar Excel'}
+                        </button>
+                    </div>
+
+                    {/* Gastos por Viaje */}
+                    <div className="bg-slate-50 rounded-lg p-6">
+                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Gastos por Viaje</h3>
+                        <p className="text-slate-600 mb-4">Exportar gastos de un viaje específico</p>
+                        <select
+                            value={selectedViaje}
+                            onChange={(e) => setSelectedViaje(e.target.value)}
+                            className="w-full mb-4 px-3 py-2 border border-slate-300 rounded-md"
+                        >
+                            <option value="">Seleccionar viaje</option>
+                            {viajes.map(viaje => (
+                                <option key={viaje.id} value={viaje.id}>
+                                    {viaje.origen} → {viaje.destino} ({viaje.fechaInicio ? new Date(viaje.fechaInicio).toLocaleDateString() : 'Sin fecha'})
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={downloadGastosViaje}
+                            disabled={loading || !selectedViaje}
+                            className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-slate-400"
+                        >
+                            {loading ? 'Generando...' : 'Descargar Excel'}
+                        </button>
+                    </div>
+
+                    {/* Gastos por Período */}
+                    <div className="bg-slate-50 rounded-lg p-6">
+                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Gastos por Período</h3>
+                        <p className="text-slate-600 mb-4">Exportar gastos entre fechas específicas</p>
+                        <div className="space-y-3 mb-4">
+                            <input
+                                type="date"
+                                value={fechaInicio}
+                                onChange={(e) => setFechaInicio(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                                placeholder="Fecha inicio"
+                            />
+                            <input
+                                type="date"
+                                value={fechaFin}
+                                onChange={(e) => setFechaFin(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                                placeholder="Fecha fin"
+                            />
+                        </div>
+                        <button
+                            onClick={downloadGastosPeriodo}
+                            disabled={loading || !fechaInicio || !fechaFin}
+                            className="w-full bg-orange-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-orange-700 disabled:bg-slate-400"
+                        >
+                            {loading ? 'Generando...' : 'Descargar Excel'}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

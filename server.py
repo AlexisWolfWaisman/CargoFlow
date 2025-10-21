@@ -1,6 +1,6 @@
 # server.py
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, make_response
 from flask_cors import CORS
 from database import db, init_db, Chofer, Camion, Acoplado, Viaje, Poliza, Gasto, TipoDeGasto, Currency, VehiculoEstado, ViajeEstado
 import os
@@ -320,6 +320,345 @@ def reset_database():
 def get_reset_status():
     with reset_lock:
         return jsonify(reset_status), 200
+
+
+# --- Informes ---
+@app.route('/api/informes/datos-permanentes-excel', methods=['GET'])
+def informe_datos_permanentes_excel():
+    """Genera un archivo Excel con datos de viajes y su información asociada (chofer, camión, acoplado)"""
+    try:
+        import pandas as pd
+        from io import BytesIO
+        from flask import send_file
+        
+        # Obtener viajes con información relacionada
+        viajes_query = db.session.query(
+            Viaje.id.label('viaje_id'),
+            Viaje.origen,
+            Viaje.destino,
+            Viaje.fecha_inicio,
+            Viaje.fecha_fin,
+            Viaje.estado.label('viaje_estado'),
+            # Datos del chofer
+            Chofer.id.label('chofer_id'),
+            Chofer.nombre.label('chofer_nombre'),
+            Chofer.apellido.label('chofer_apellido'),
+            Chofer.nacionalidad.label('chofer_nacionalidad'),
+            Chofer.identificacion.label('chofer_identificacion'),
+            Chofer.identificacion_laboral.label('chofer_identificacion_laboral'),
+            Chofer.telefono.label('chofer_telefono'),
+            Chofer.email.label('chofer_email'),
+            # Datos del camión
+            Camion.dominio.label('camion_dominio'),
+            Camion.marca.label('camion_marca'),
+            Camion.modelo.label('camion_modelo'),
+            Camion.año.label('camion_año'),
+            Camion.color.label('camion_color'),
+            Camion.tipo.label('camion_tipo'),
+            Camion.chasis.label('camion_chasis'),
+            Camion.estado.label('camion_estado'),
+            # Datos del acoplado
+            Acoplado.dominio.label('acoplado_dominio'),
+            Acoplado.marca.label('acoplado_marca'),
+            Acoplado.modelo.label('acoplado_modelo'),
+            Acoplado.año.label('acoplado_año'),
+            Acoplado.color.label('acoplado_color'),
+            Acoplado.tipo.label('acoplado_tipo'),
+            Acoplado.chasis.label('acoplado_chasis'),
+            Acoplado.estado.label('acoplado_estado')
+        ).outerjoin(Chofer, Viaje.chofer_id == Chofer.id
+        ).outerjoin(Camion, Viaje.camion_dominio == Camion.dominio
+        ).outerjoin(Acoplado, Viaje.acoplado_dominio == Acoplado.dominio
+        ).order_by(Viaje.fecha_inicio.asc()).all()
+        
+        if not viajes_query:
+            return jsonify({'error': 'No se encontraron viajes para generar el informe'}), 404
+        
+        # Convertir a lista de diccionarios
+        viajes_data = []
+        for row in viajes_query:
+            viajes_data.append({
+                # Información del viaje
+                'ID Viaje': row.viaje_id,
+                'Origen': row.origen,
+                'Destino': row.destino,
+                'Fecha Inicio': row.fecha_inicio.strftime('%Y-%m-%d %H:%M:%S') if row.fecha_inicio else '',
+                'Fecha Fin': row.fecha_fin.strftime('%Y-%m-%d %H:%M:%S') if row.fecha_fin else '',
+                
+                # Información del chofer
+                'Chofer Nombre': row.chofer_nombre or '',
+                'Chofer Apellido': row.chofer_apellido or '',
+                'Chofer Nacionalidad': row.chofer_nacionalidad or '',
+                'Chofer Identificación': row.chofer_identificacion or '',
+                'Chofer ID Laboral': row.chofer_identificacion_laboral or '',
+                'Chofer Teléfono': row.chofer_telefono or '',
+                'Chofer Email': row.chofer_email or '',
+                
+                # Información del camión
+                'Camión Dominio': row.camion_dominio or '',
+                'Camión Marca': row.camion_marca or '',
+                'Camión Modelo': row.camion_modelo or '',
+                'Camión Año': row.camion_año or '',
+                'Camión Color': row.camion_color or '',
+                'Camión Tipo': row.camion_tipo or '',
+                'Camión Chasis': row.camion_chasis or '',
+                
+                # Información del acoplado
+                'Acoplado Dominio': row.acoplado_dominio or '',
+                'Acoplado Marca': row.acoplado_marca or '',
+                'Acoplado Modelo': row.acoplado_modelo or '',
+                'Acoplado Año': row.acoplado_año or '',
+                'Acoplado Color': row.acoplado_color or '',
+                'Acoplado Tipo': row.acoplado_tipo or '',
+                'Acoplado Chasis': row.acoplado_chasis or ''
+            })
+        
+        # Convertir a DataFrame
+        df_viajes = pd.DataFrame(viajes_data)
+        
+        # Crear archivo Excel en memoria
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_viajes.to_excel(writer, sheet_name='Viajes Completos', index=False)
+            
+            # Añadir hoja de resumen
+            resumen_data = {
+                'Concepto': [
+                    'Total Viajes',
+                    'Viajes con Chofer Asignado',
+                    'Viajes con Camión Asignado',
+                    'Viajes con Acoplado Asignado',
+                    'Viajes Completos (con todos los datos)'
+                ],
+                'Cantidad': [
+                    len(viajes_data),
+                    len([v for v in viajes_data if v['Chofer Nombre']]),
+                    len([v for v in viajes_data if v['Camión Dominio']]),
+                    len([v for v in viajes_data if v['Acoplado Dominio']]),
+                    len([v for v in viajes_data if v['Chofer Nombre'] and v['Camión Dominio'] and v['Acoplado Dominio']])
+                ]
+            }
+            df_resumen = pd.DataFrame(resumen_data)
+            df_resumen.to_excel(writer, sheet_name='Resumen', index=False)
+        
+        output.seek(0)
+        
+        filename = f'Viajes Completos_{time.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        response = make_response(send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        ))
+        
+        # Agregar headers para evitar caché
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generando informe: {str(e)}'}), 500
+
+@app.route('/api/informes/gastos-viaje-excel/<int:viaje_id>', methods=['GET'])
+def informe_gastos_viaje_excel(viaje_id):
+    """Genera un archivo Excel con los gastos de un viaje específico"""
+    try:
+        import pandas as pd
+        from io import BytesIO
+        from flask import send_file
+        
+        # Verificar que el viaje existe
+        viaje = Viaje.query.get_or_404(viaje_id)
+        
+        # Obtener gastos del viaje con información adicional
+        gastos_query = db.session.query(
+            Gasto.id,
+            Gasto.monto,
+            Gasto.fecha,
+            Gasto.descripcion,
+            Gasto.moneda,
+            TipoDeGasto.nombre.label('tipo_gasto'),
+            Viaje.origen,
+            Viaje.destino,
+            Chofer.nombre.label('chofer_nombre'),
+            Chofer.apellido.label('chofer_apellido'),
+            Camion.dominio.label('camion_dominio'),
+            Camion.marca.label('camion_marca'),
+            Camion.modelo.label('camion_modelo'),
+            Acoplado.dominio.label('acoplado_dominio'),
+            Acoplado.marca.label('acoplado_marca'),
+            Acoplado.modelo.label('acoplado_modelo')
+        ).join(TipoDeGasto, Gasto.tipo_id == TipoDeGasto.id
+        ).join(Viaje, Gasto.viaje_id == Viaje.id
+        ).outerjoin(Chofer, Viaje.chofer_id == Chofer.id
+        ).outerjoin(Camion, Viaje.camion_dominio == Camion.dominio
+        ).outerjoin(Acoplado, Viaje.acoplado_dominio == Acoplado.dominio
+        ).filter(Gasto.viaje_id == viaje_id).all()
+        
+        if not gastos_query:
+            return jsonify({'error': 'No se encontraron gastos para este viaje'}), 404
+        
+        # Convertir a DataFrame
+        gastos_data = []
+        for row in gastos_query:
+            gastos_data.append({
+                'ID Gasto': row.id,
+                'Fecha': row.fecha.strftime('%Y-%m-%d %H:%M:%S') if row.fecha else '',
+                'Tipo de Gasto': row.tipo_gasto,
+                'Descripción': row.descripcion or '',
+                'Monto': row.monto,
+                'Moneda': row.moneda,
+                'Viaje - Origen': row.origen,
+                'Viaje - Destino': row.destino,
+                'Chofer': f"{row.chofer_nombre or ''} {row.chofer_apellido or ''}".strip(),
+                'Camión': f"{row.camion_dominio or ''} - {row.camion_marca or ''} {row.camion_modelo or ''}".strip(),
+                'Acoplado': f"{row.acoplado_dominio or ''} - {row.acoplado_marca or ''} {row.acoplado_modelo or ''}".strip()
+            })
+        
+        df_gastos = pd.DataFrame(gastos_data)
+        
+        # Crear archivo Excel en memoria
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_gastos.to_excel(writer, sheet_name='Gastos del Viaje', index=False)
+            
+            # Añadir hoja de resumen
+            resumen_data = {
+                'Concepto': ['Viaje ID', 'Origen', 'Destino', 'Total Gastos', 'Cantidad de Gastos'],
+                'Valor': [
+                    viaje_id,
+                    viaje.origen,
+                    viaje.destino,
+                    len(gastos_data),
+                    f"{sum([g['Monto'] for g in gastos_data]):.2f}"
+                ]
+            }
+            df_resumen = pd.DataFrame(resumen_data)
+            df_resumen.to_excel(writer, sheet_name='Resumen', index=False)
+        
+        output.seek(0)
+        
+        filename = f'Gastos por Viaje_{viaje_id}_{time.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        response = make_response(send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        ))
+        
+        # Agregar headers para evitar caché
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generando informe: {str(e)}'}), 500
+
+@app.route('/api/informes/gastos-periodo-excel', methods=['GET'])
+def informe_gastos_periodo_excel():
+    """Genera un archivo Excel con gastos de un período específico"""
+    try:
+        import pandas as pd
+        from io import BytesIO
+        from flask import send_file
+        from datetime import datetime
+        
+        # Obtener parámetros de fecha
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        if not fecha_inicio or not fecha_fin:
+            return jsonify({'error': 'Se requieren fecha_inicio y fecha_fin como parámetros'}), 400
+        
+        try:
+            fecha_inicio_dt = parse_date(fecha_inicio)
+            fecha_fin_dt = parse_date(fecha_fin)
+        except:
+            return jsonify({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}), 400
+        
+        # Obtener gastos del período
+        gastos_query = db.session.query(
+            Gasto.id,
+            Gasto.monto,
+            Gasto.fecha,
+            Gasto.descripcion,
+            Gasto.moneda,
+            TipoDeGasto.nombre.label('tipo_gasto'),
+            Viaje.id.label('viaje_id'),
+            Viaje.origen,
+            Viaje.destino,
+            Chofer.nombre.label('chofer_nombre'),
+            Chofer.apellido.label('chofer_apellido')
+        ).join(TipoDeGasto, Gasto.tipo_id == TipoDeGasto.id
+        ).join(Viaje, Gasto.viaje_id == Viaje.id
+        ).outerjoin(Chofer, Viaje.chofer_id == Chofer.id
+        ).filter(
+            Gasto.fecha >= fecha_inicio_dt,
+            Gasto.fecha <= fecha_fin_dt
+        ).order_by(Gasto.fecha.desc()).all()
+        
+        if not gastos_query:
+            return jsonify({'error': f'No se encontraron gastos entre {fecha_inicio} y {fecha_fin}'}), 404
+        
+        # Convertir a DataFrame
+        gastos_data = []
+        for row in gastos_query:
+            gastos_data.append({
+                'ID Gasto': row.id,
+                'Fecha': row.fecha.strftime('%Y-%m-%d %H:%M:%S') if row.fecha else '',
+                'Tipo de Gasto': row.tipo_gasto,
+                'Descripción': row.descripcion or '',
+                'Monto': row.monto,
+                'Moneda': row.moneda,
+                'ID Viaje': row.viaje_id,
+                'Origen': row.origen,
+                'Destino': row.destino,
+                'Chofer': f"{row.chofer_nombre or ''} {row.chofer_apellido or ''}".strip()
+            })
+        
+        df_gastos = pd.DataFrame(gastos_data)
+        
+        # Crear archivo Excel en memoria
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_gastos.to_excel(writer, sheet_name='Gastos por Período', index=False)
+            
+            # Añadir hoja de resumen por tipo de gasto
+            resumen_por_tipo = df_gastos.groupby('Tipo de Gasto')['Monto'].agg(['count', 'sum']).reset_index()
+            resumen_por_tipo.columns = ['Tipo de Gasto', 'Cantidad', 'Total']
+            resumen_por_tipo.to_excel(writer, sheet_name='Resumen por Tipo', index=False)
+            
+            # Añadir hoja de resumen por moneda
+            resumen_por_moneda = df_gastos.groupby('Moneda')['Monto'].agg(['count', 'sum']).reset_index()
+            resumen_por_moneda.columns = ['Moneda', 'Cantidad', 'Total']
+            resumen_por_moneda.to_excel(writer, sheet_name='Resumen por Moneda', index=False)
+        
+        output.seek(0)
+        
+        filename = f'Gastos por Periodo_{fecha_inicio}_{fecha_fin}_{time.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        response = make_response(send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        ))
+        
+        # Agregar headers para evitar caché
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generando informe: {str(e)}'}), 500
 
 
 # ----------------- Main Execution -----------------
