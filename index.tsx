@@ -1259,7 +1259,7 @@ const InformesManager = ({ viajes }) => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'viaje.xlsx';  // Nombre simple y directo
+            a.download = `viaje_${new Date().toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_')}.xlsx`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

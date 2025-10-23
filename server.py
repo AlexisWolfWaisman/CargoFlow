@@ -443,7 +443,7 @@ def informe_datos_permanentes_excel():
         
         output.seek(0)
         
-        filename = 'viaje.xlsx'
+        filename = f'viaje_{time.strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         response = make_response(send_file(
             output,
