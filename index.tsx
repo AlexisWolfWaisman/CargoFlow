@@ -206,11 +206,11 @@ const Sidebar = ({ setActiveView, activeView }) => {
         { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
         { id: 'viajes', label: 'Viajes', icon: <ViajesIcon /> },
         { id: 'gastos', label: 'Gastos', icon: <GastosIcon /> },
-        { id: 'informes', label: 'Informes', icon: <InformesIcon /> },
         { id: 'choferes', label: 'Choferes', icon: <ChoferesIcon /> },
         { id: 'camiones', label: 'Camiones', icon: <CamionesIcon /> },
         { id: 'acoplados', label: 'Acoplados', icon: <AcopladosIcon /> },
         { id: 'polizas', label: 'Pólizas', icon: <PolizasIcon /> },
+        { id: 'informes', label: 'Informes', icon: <InformesIcon /> },
         { id: 'configuracion', label: 'Configuración', icon: <SettingsIcon /> },
     ];
     const appVersion = "1.0.1-hotfix";
