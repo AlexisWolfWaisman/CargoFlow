@@ -18,7 +18,7 @@ const GastosIcon = () => <Icon path="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0
 const ChoferesIcon = () => <Icon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />;
 const CamionesIcon = () => <Icon path="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />;
 const AcopladosIcon = () => <Icon path="M20 12H4m16 0a4 4 0 10-8 0 4 4 0 008 0zm-8 0a4 4 0 11-8 0 4 4 0 018 0z" />;
-const PolizasIcon = () => <Icon path="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />;
+const DocumentosIcon = () => <Icon path="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />;
 const InformesIcon = () => <Icon path="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />;
 const SettingsIcon = () => <Icon path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />;
 const EditIcon = () => <Icon path="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536l12.232-12.232z" className="h-5 w-5" />;
@@ -180,7 +180,7 @@ const App = () => {
             case 'camiones': return <CamionesManager camiones={camiones} estados={vehiculoEstados} onAdd={handleAdd('camiones', 'camiones')} onUpdate={handleUpdate('camiones', 'dominio')} onDelete={handleDelete('camiones', 'camiones')} />;
             case 'acoplados': return <AcopladosManager acoplados={acoplados} estados={vehiculoEstados} onAdd={handleAdd('acoplados', 'acoplados')} onUpdate={handleUpdate('acoplados', 'dominio')} onDelete={handleDelete('acoplados', 'acoplados')} />;
             case 'viajes': return <ViajesManager viajes={viajes} choferes={choferes} camiones={camiones} acoplados={acoplados} estados={viajeEstados} onAdd={handleAdd('viajes', 'viajes')} onUpdate={handleUpdate('viajes')} onDelete={handleDelete('viajes', 'viajes')} />;
-            case 'polizas': return <PolizasManager polizas={polizas} camiones={camiones} acoplados={acoplados} onAdd={handleAdd('polizas', 'polizas')} onUpdate={handleUpdate('polizas')} onDelete={handleDelete('polizas', 'polizas')} />;
+            case 'documentos': return <DocumentosManager polizas={polizas} camiones={camiones} acoplados={acoplados} onAddPoliza={handleAdd('polizas', 'polizas')} onUpdatePoliza={handleUpdate('polizas')} onDeletePoliza={handleDelete('polizas', 'polizas')} />;
             case 'gastos': return <GastosManager gastos={gastos} tiposDeGasto={tiposDeGasto} currencies={currencies} viajes={viajes} onAddGasto={handleAdd('gastos', 'gastos')} onUpdateGasto={handleUpdate('gastos')} onDeleteGasto={handleDelete('gastos', 'gastos')} />;
             case 'informes': return <InformesManager viajes={viajes} />;
             case 'configuracion': return <ConfiguracionManager tiposDeGasto={tiposDeGasto} currencies={currencies} onAddTipo={handleAddTipoGasto} onDeleteTipo={handleDeleteTipoGasto} />;
@@ -209,11 +209,11 @@ const Sidebar = ({ setActiveView, activeView }) => {
         { id: 'choferes', label: 'Choferes', icon: <ChoferesIcon /> },
         { id: 'camiones', label: 'Camiones', icon: <CamionesIcon /> },
         { id: 'acoplados', label: 'Acoplados', icon: <AcopladosIcon /> },
-        { id: 'polizas', label: 'Pólizas', icon: <PolizasIcon /> },
+        { id: 'documentos', label: 'Documentos', icon: <DocumentosIcon /> },
         { id: 'informes', label: 'Informes', icon: <InformesIcon /> },
         { id: 'configuracion', label: 'Configuración', icon: <SettingsIcon /> },
     ];
-    const appVersion = "1.0.1-hotfix";
+    const appVersion = "1.0.0";
 
     return (
         <aside className="w-64 bg-white shadow-lg flex flex-col">
@@ -946,6 +946,55 @@ const EditViajeModal = ({ viaje, choferes, camiones, acoplados, estados, onClose
                         <button type="submit" className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700">Guardar Cambios</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+};
+
+const DocumentosManager = ({ polizas, camiones, acoplados, onAddPoliza, onUpdatePoliza, onDeletePoliza }) => {
+    const [activeSubsection, setActiveSubsection] = useState('polizas');
+
+    const subsections = [
+        { id: 'polizas', label: 'Pólizas', icon: '📄' }
+        // Aquí se agregarán más subsecciones en el futuro
+    ];
+
+    const renderSubsectionContent = () => {
+        switch (activeSubsection) {
+            case 'polizas':
+                return <PolizasManager polizas={polizas} camiones={camiones} acoplados={acoplados} onAdd={onAddPoliza} onUpdate={onUpdatePoliza} onDelete={onDeletePoliza} />;
+            default:
+                return <div>Subsección no encontrada</div>;
+        }
+    };
+
+    return (
+        <div>
+            <h1 className="text-3xl font-bold mb-6">Gestión de Documentos</h1>
+            
+            {/* Navegación de subsecciones */}
+            <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+                <div className="flex gap-4">
+                    {subsections.map(subsection => (
+                        <button
+                            key={subsection.id}
+                            onClick={() => setActiveSubsection(subsection.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                activeSubsection === subsection.id
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                        >
+                            <span>{subsection.icon}</span>
+                            {subsection.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Contenido de la subsección activa */}
+            <div>
+                {renderSubsectionContent()}
             </div>
         </div>
     );
