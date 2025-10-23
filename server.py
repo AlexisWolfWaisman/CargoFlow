@@ -323,7 +323,7 @@ def get_reset_status():
 
 
 # --- Informes ---
-@app.route('/api/informes/datos-permanentes-excel', methods=['GET'])
+@app.route('/api/informes/viajes-excel', methods=['GET'])
 def informe_datos_permanentes_excel():
     """Genera un archivo Excel con datos de viajes y su información asociada (chofer, camión, acoplado)"""
     try:
@@ -443,7 +443,7 @@ def informe_datos_permanentes_excel():
         
         output.seek(0)
         
-        filename = f'Viajes Completos_{time.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        filename = 'viaje.xlsx'
         
         response = make_response(send_file(
             output,

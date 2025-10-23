@@ -1244,7 +1244,13 @@ const InformesManager = ({ viajes }) => {
         setLoading(true);
         setMessage('');
         try {
-            const response = await fetch('http://127.0.0.1:5001/api/informes/datos-permanentes-excel');
+            const response = await fetch('http://127.0.0.1:5001/api/informes/viajes-excel', {
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             if (!response.ok) {
                 throw new Error(`Error: ${response.status}`);
             }
@@ -1253,7 +1259,7 @@ const InformesManager = ({ viajes }) => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `datos_permanentes_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
+            a.download = 'viaje.xlsx';  // Nombre simple y directo
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
