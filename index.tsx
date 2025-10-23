@@ -1351,7 +1351,7 @@ const InformesManager = ({ viajes }) => {
                 <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Datos Permanentes */}
                     <div className="bg-slate-50 rounded-lg p-6">
-                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Viajes Completos</h3>
+                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Viajes</h3>
                         <p className="text-slate-600 mb-4">Exportar todos los viajes con información completa de chofer, camión y acoplado</p>
                         <button
                             onClick={downloadDatosPermanentes}

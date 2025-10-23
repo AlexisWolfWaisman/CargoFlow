@@ -419,7 +419,7 @@ def informe_datos_permanentes_excel():
         # Crear archivo Excel en memoria
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_viajes.to_excel(writer, sheet_name='Viajes Completos', index=False)
+            df_viajes.to_excel(writer, sheet_name='Viajes', index=False)
             
             # Añadir hoja de resumen
             resumen_data = {
@@ -428,7 +428,7 @@ def informe_datos_permanentes_excel():
                     'Viajes con Chofer Asignado',
                     'Viajes con Camión Asignado',
                     'Viajes con Acoplado Asignado',
-                    'Viajes Completos (con todos los datos)'
+                    'Viajes (con todos los datos)'
                 ],
                 'Cantidad': [
                     len(viajes_data),
